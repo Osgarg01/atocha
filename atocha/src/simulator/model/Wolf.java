@@ -52,29 +52,9 @@ public class Wolf extends Animal{
                 this.mateTarget = null;
             }
         
-
-        // State-specific behaviou
         @Override
-    public void update(double dt) {
-        if (dt <= 0) throw new IllegalArgumentException("dt must be positive");
-
-        if (state == State.DEAD) return;
-
-        // adjust position if outside map (wrap-around) and reset to NORMAL
-        if (regionMngr != null) {
-            double x = pos.getX();
-            double y = pos.getY();
-            double w = regionMngr.getWidth();
-            double h = regionMngr.getHeight();
-            boolean outside = x < 0 || x >= w || y < 0 || y >= h;
-            if (outside) {
-                while (x >= w) x -= w;
-                while (x < 0) x += w;
-                while (y >= h) y -= h;
-                while (y < 0) y += h;
-                pos = new Vector2D(x, y);
-                setState(State.NORMAL);
-            }
+    public void updateState (double dt) {
+       
         switch (state) {
             case NORMAL:
                 // choose new dest if needed
@@ -168,21 +148,14 @@ public class Wolf extends Animal{
             case DEAD:
             default:
                 break;
+                
+                //FALTA POR IMPLEMENTAR DANGER Y DEAD
         }
 
-        // death by age/energy
-        if (energy <= 0.0 || age > Constants.MAX_AGE_WOLF) {
-            setState(State.DEAD);
-            return;
-        }
-
-        // get food from region
-        if (state != State.DEAD && regionMngr != null) {
-            double food = regionMngr.getFood(this, dt);
-            energy = Utils.constrainValueInRange(energy + food, 0.0, Constants.MAX_ENERGY);
-        }
     }
-    }   
+        
+        
+ }   
 
 
-}
+
