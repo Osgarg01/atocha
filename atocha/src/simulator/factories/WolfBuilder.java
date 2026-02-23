@@ -11,6 +11,8 @@ import simulator.model.Wolf;
 
 public class WolfBuilder extends Builder<Wolf>{
     private Factory<SelectionStrategy> sFactory;
+    
+    
     public WolfBuilder(Factory<SelectionStrategy> sFactory) {
         super("wolf", "A wolf");
         this.sFactory = sFactory;
@@ -27,11 +29,12 @@ public class WolfBuilder extends Builder<Wolf>{
         
         // Parse danger strategy
         SelectionStrategy dangerStrategy;
-        if(data.has("danger_strategy")) {
-            dangerStrategy = sFactory.createInstance(data.getJSONObject("danger_strategy"));
+        if(data.has("hunt_strategy")) {
+            dangerStrategy = sFactory.createInstance(data.getJSONObject("hunt_strategy"));
         } else {
             dangerStrategy = new SelectFirst();
         }
+        //FALTA ALGUNAS REVISIONES DE POSICIONES Y EXCEPCIONES Y TAL
         
         // Parse position
         Vector2D pos = null;

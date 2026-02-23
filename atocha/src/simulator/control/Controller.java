@@ -13,6 +13,9 @@ public class Controller {
     Simulator sim;
 
     public Controller(Simulator sim) {
+    	if (sim == null) {
+    		throw new IllegalArgumentException("El simulador no existe");
+    	}
         this.sim = sim;
     }   
 
