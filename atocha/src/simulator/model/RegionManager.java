@@ -24,7 +24,7 @@ public class RegionManager implements AnimalMapView {
 	private Map<Animal, Region> animalRegion;
 	
 	public RegionManager(int cols, int rows, int width, int height) {
-		// --- VALIDACIONES DE PARÁMETROS (Regla estricta) ---
+		// VALIDACIONES DE PARÁMETROS
 		if (cols <= 0) {
 			throw new IllegalArgumentException("El número de columnas debe ser positivo");
 		}
@@ -59,37 +59,37 @@ public class RegionManager implements AnimalMapView {
 
 	@Override
 	public int getCols() {
-		// TODO Auto-generated method stub
+		
 		return cols;
 	}
 
 	@Override
 	public int getRows() {
-		// TODO Auto-generated method stub
+		
 		return rows;
 	}
 
 	@Override
 	public int getWidth() {
-		// TODO Auto-generated method stub
+	
 		return width;
 	}
 
 	@Override
 	public int getHeight() {
-		// TODO Auto-generated method stub
+
 		return height;
 	}
 
 	@Override
 	public int getRegionWidth() {
-		// TODO Auto-generated method stub
+
 		return regionWidth;
 	}
 
 	@Override
 	public int getRegionHeight() {
-		// TODO Auto-generated method stub
+
 		return regionHeight;
 	}
 

@@ -18,7 +18,7 @@ public class Simulator implements JSONable {
 	private double time;
 	
 	
-	public Simulator (int rows, int cols, int width, int length, Factory<Animal> animalsF, Factory<Region> regionsF) {
+	public Simulator (int cols, int rows, int width, int length, Factory<Animal> animalsF, Factory<Region> regionsF) {
 		
 		this.animalsFactory = animalsF;
 		this.regionsFactory = regionsF;
@@ -34,19 +34,19 @@ public class Simulator implements JSONable {
 	}
 
 	public void setRegion(int row, int col, JSONObject rJson) {
-		// Crea la regiï¿½n usando la factorï¿½a y llama al mï¿½todo privado
+		// Crea la region usando la factoria y llama al metodo privado
 		Region r = regionsFactory.createInstance(rJson);
 		setRegion(row, col, r);
 	}
 	
 	private void addAnimal(Animal a) {
-		// Aï¿½ade a la lista principal y registra en el gestor
+		// Añade a la lista principal y registra en el gestor
 		animals.add(a);
 		regionManager.registerAnimal(a);
 	}
 
 	public void addAnimal(JSONObject aJson) {
-		// Crea el animal usando la factorï¿½a y llama al mï¿½todo privado
+		// Crea el animal con la factoria 
 		Animal a = animalsFactory.createInstance(aJson);
 		addAnimal(a);
 	}
@@ -66,11 +66,10 @@ public class Simulator implements JSONable {
 		
 	
 	public void advance(double dt) {
-		// 1. Incrementar el tiempo
+		
 		time += dt;
 
-		// 2. Quitar animales muertos
-		//Usamos lista auxiliar
+		
 		List<Animal> deadAnimals = new ArrayList<>();
 		for (Animal a : animals) {
 			if (a.getState() == State.DEAD) {
@@ -80,16 +79,16 @@ public class Simulator implements JSONable {
 		}
 		animals.removeAll(deadAnimals);
 
-		// 3. Actualizar cada animal
+		
 		for (Animal a : animals) {
 			a.update(dt);
 			regionManager.updateAnimalRegion(a);
 		}
 
-		// 4. Actualizar todas las regiones
+	
 		regionManager.updateAllRegions(dt);
 
-		// 5. Reproducciï¿½n (Bebï¿½s)
+	
 		List<Animal> babies = new ArrayList<>();
 		for (Animal a : animals) {
 			if (a.isPregnant()) {
@@ -97,7 +96,7 @@ public class Simulator implements JSONable {
 			}
 		}
 		
-		// Aï¿½adimos los bebï¿½s a la simulaciï¿½n
+
 		for (Animal baby : babies) {
 			addAnimal(baby);
 		}

@@ -24,118 +24,165 @@ public class Sheep extends Animal{
         this.dangerStrategy = p1.dangerStrategy;
           this.dangerSource = null;
     }
+    
+    @Override
+    public void update(double dt) {
+    		if (state == State.DEAD) return;
+
+    		updateState(dt);
+
+    		
+    		if (adjustPosition()) {
+    			setState(State.NORMAL);
+    		}
+    		
+    		if (energy <= 0.0 || age > Constants.MAX_AGE_SHEEP) {
+    			setState(State.DEAD);
+    			return;
+    		}
+
+    		if (state != State.DEAD && regionMngr != null) {
+    			double food = regionMngr.getFood(this, dt);
+    			energy = Utils.constrainValueInRange(energy + food, 0.0, Constants.MAX_ENERGY);
+    		}
+    }
 
     @Override
     public void updateState(double dt) {
         
         switch (state) {
             case NORMAL:
-                // choose new dest if needed
-                if (dest == null && regionMngr != null) {
-                    double dx = Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1);
-                    double dy = Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1);
-                    dest = new Vector2D(dx, dy);
-                }
-
-                if (dest != null && pos.distanceTo(dest) < Constants.COLLISION_RANGE && regionMngr != null) {
-                    double dx = Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1);
-                    double dy = Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1);
-                    dest = new Vector2D(dx, dy);
-                }
-
-                move(speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
-                age += dt;
-                energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
-                desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
-
-                // look for danger
-                if (dangerSource == null && regionMngr != null) {
-                    List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
-                    if (!candidates.isEmpty()) dangerSource = dangerStrategy.select(this, candidates);
-                }
-
-                if (dangerSource != null) setState(State.DANGER);
-                else if (desire > Constants.DESIRE_THRESHOLD_SHEEP) setState(State.MATE);
+            	updateNormal(dt);
                 break;
 
             case DANGER:
-                if (dangerSource != null && dangerSource.getState() == State.DEAD) dangerSource = null;
-                if (dangerSource == null) {
-                    // fallback to NORMAL behaviour
-                    setState(State.NORMAL);
-                    break;
-                }
-
-                dest = pos.plus(pos.minus(dangerSource.getPosition()).direction());
-                move(2.0 * speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
-                age += dt;
-                energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * Constants.FOOD_DROP_BOOST_FACTOR_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
-                desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
-
-                if (regionMngr != null) {
-                    double d = pos.distanceTo(dangerSource.getPosition());
-                    if (d > sightRange) {
-                        List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
-                        dangerSource = candidates.isEmpty() ? null : dangerStrategy.select(this, candidates);
-                    }
-                }
-
-                if (dangerSource == null) {
-                    if (desire < Constants.DESIRE_THRESHOLD_SHEEP) setState(State.NORMAL);
-                    else setState(State.MATE);
-                }
+            	updateDanger(dt);
                 break;
 
             case MATE:
-                if (mateTarget != null) {
-                    if (mateTarget.getState() == State.DEAD) mateTarget = null;
-                    else if (pos.distanceTo(mateTarget.getPosition()) > sightRange) mateTarget = null;
-                }
-
-                if (mateTarget == null && regionMngr != null) {
-                    List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getGeneticCode().equals(this.geneticCode));
-                    mateTarget = candidates.isEmpty() ? null : mateStrategy.select(this, candidates);
-                }
-
-                if (mateTarget == null) {
-                    // behave as normal
-                    setState(State.NORMAL);
-                    break;
-                }
-
-                dest = mateTarget.getPosition();
-                move(2.0 * speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
-                age += dt;
-                energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * Constants.FOOD_DROP_BOOST_FACTOR_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
-                desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
-
-                if (pos.distanceTo(mateTarget.getPosition()) < Constants.COLLISION_RANGE) {
-                    this.desire = 0.0;
-                    mateTarget.desire = 0.0;
-                    if (this.baby == null && Utils.RAND.nextDouble() < Constants.PREGNANT_PROBABILITY_SHEEP) this.baby = new Sheep(this, mateTarget);
-                    mateTarget = null;
-
-                    if (dangerSource == null && regionMngr != null) {
-                        List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
-                        dangerSource = candidates.isEmpty() ? null : dangerStrategy.select(this, candidates);
-                    }
-
-                    if (dangerSource != null) setState(State.DANGER);
-                    else if (desire < Constants.DESIRE_THRESHOLD_SHEEP) setState(State.NORMAL);
-                }
+                updateMate(dt);
                 break;
 
             case HUNGER:
             case DEAD:
             default:
                 break;
-                
-                //FALTA IMPLEMENTAR CADA UNO DE LOS DISTINTOS CASOS EN VARIAS FUNCIONES
-                //COMO DICE EL ENUNCIADO
+           
         }
 
     }
+    private void updateMate(double dt) {
+    	if (mateTarget != null && (mateTarget.getState() == State.DEAD || pos.distanceTo(mateTarget.getPosition()) > sightRange)) {
+			mateTarget = null;
+		}
 
+		if (mateTarget == null && regionMngr != null) {
+			List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getGeneticCode().equals(this.geneticCode));
+			mateTarget = candidates.isEmpty() ? null : mateStrategy.select(this, candidates);
+		}
+
+		if (mateTarget == null) {
+			// avanza normalmente
+			if (dest == null || pos.distanceTo(dest) < Constants.COLLISION_RANGE) {
+				if (regionMngr != null) dest = new Vector2D(Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1), Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1));
+			}
+			move(speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
+			age += dt;
+			energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
+			desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
+		} else {
+			// persigue a la pareja
+			dest = mateTarget.getPosition();
+			move(Constants.BOOST_FACTOR_SHEEP * speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
+			age += dt;
+			energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * Constants.FOOD_DROP_BOOST_FACTOR_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
+			desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
+
+			if (pos.distanceTo(mateTarget.getPosition()) < Constants.COLLISION_RANGE) {
+				this.desire = 0.0;
+				mateTarget.desire = 0.0;
+				if (this.baby == null && Utils.RAND.nextDouble() < Constants.PREGNANT_PROBABILITY_SHEEP) {
+					this.baby = new Sheep(this, mateTarget);
+				}
+				mateTarget = null;
+			}
+		}
+
+		// Chequear peligros
+		if (dangerSource == null && regionMngr != null) {
+			List<Animal> predators = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
+			dangerSource = predators.isEmpty() ? null : dangerStrategy.select(this, predators);
+		}
+
+		if (dangerSource != null) {
+			setState(State.DANGER);
+		} else if (desire < Constants.DESIRE_THRESHOLD_SHEEP) {
+			setState(State.NORMAL);
+		}
+	}
+
+	private void updateDanger(double dt) {
+		if (dangerSource != null && dangerSource.getState() == State.DEAD) {
+			dangerSource = null;
+		}
+
+		if (dangerSource == null) {
+			// avanza normalmente
+			if (dest == null || pos.distanceTo(dest) < Constants.COLLISION_RANGE) {
+				if (regionMngr != null) dest = new Vector2D(Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1), Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1));
+			}
+			move(speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
+			age += dt;
+			energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
+			desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
+		} else {
+			// huye
+			dest = pos.plus(pos.minus(dangerSource.getPosition()).direction());
+			move(Constants.BOOST_FACTOR_SHEEP * speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
+			age += dt;
+			energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * Constants.FOOD_DROP_BOOST_FACTOR_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
+			desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
+
+			if (regionMngr != null && pos.distanceTo(dangerSource.getPosition()) > sightRange) {
+				List<Animal> predators = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
+				dangerSource = predators.isEmpty() ? null : dangerStrategy.select(this, predators);
+			}
+		}
+
+		if (dangerSource == null) {
+			if (desire < Constants.DESIRE_THRESHOLD_SHEEP) setState(State.NORMAL);
+			else setState(State.MATE);
+		}
+    }
+
+    private void updateNormal(double dt) {
+    	  if (dest == null && regionMngr != null) {
+              double dx = Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1);
+              double dy = Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1);
+              dest = new Vector2D(dx, dy);
+          }
+
+          if (dest != null && pos.distanceTo(dest) < Constants.COLLISION_RANGE && regionMngr != null) {
+              double dx = Utils.RAND.nextDouble() * (regionMngr.getWidth() - 1);
+              double dy = Utils.RAND.nextDouble() * (regionMngr.getHeight() - 1);
+              dest = new Vector2D(dx, dy);
+          }
+
+          move(speed * dt * Math.exp((energy - Constants.INIT_ENERGY) * Constants.HUNGER_DECAY_EXP_FACTOR));
+          age += dt;
+          energy = Utils.constrainValueInRange(energy - Constants.FOOD_DROP_RATE_SHEEP * dt, 0.0, Constants.MAX_ENERGY);
+          desire = Utils.constrainValueInRange(desire + Constants.DESIRE_INCREASE_RATE_SHEEP * dt, 0.0, Constants.MAX_DESIRE);
+
+          // look for danger
+          if (dangerSource == null && regionMngr != null) {
+              List<Animal> candidates = regionMngr.getAnimalsInRange(this, a -> a.getDiet() == Diet.CARNIVORE);
+              if (!candidates.isEmpty()) dangerSource = dangerStrategy.select(this, candidates);
+          }
+
+          if (dangerSource != null) setState(State.DANGER);
+          else if (desire > Constants.DESIRE_THRESHOLD_SHEEP) setState(State.MATE);
+    }
+    
     @Override
     protected void setNormalStateAction() {
         this.mateTarget = null;

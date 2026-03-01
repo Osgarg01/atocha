@@ -1,16 +1,22 @@
 package simulator.control;
 
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import simulator.model.AnimalInfo;
+import simulator.model.MapInfo;
 import simulator.model.Simulator;
+import simulator.view.SimpleObjectViewer;
+import simulator.view.SimpleObjectViewer.ObjInfo;
 
 public class Controller {
 
-    Simulator sim;
+    private Simulator sim;
 
     public Controller(Simulator sim) {
     	if (sim == null) {
@@ -20,7 +26,6 @@ public class Controller {
     }   
 
     public void loadData(JSONObject data){
-        // First, load regions (optional) - must be done before adding animals
         if(data.has("regions")){
             JSONArray regions = data.getJSONArray("regions");
             for(int i = 0; i < regions.length(); i++){
@@ -34,7 +39,6 @@ public class Controller {
                 int cf = colRange.getInt(0);
                 int ct = colRange.getInt(1);
                 
-                // Set region for each cell in the range
                 for(int R = rf; R <= rt; R++){
                     for(int C = cf; C <= ct; C++){
                         sim.setRegion(R, C, spec);
@@ -43,7 +47,6 @@ public class Controller {
             }
         }
         
-        // Then, load animals
         if(data.has("animals")){
             JSONArray animals = data.getJSONArray("animals");
             for(int i = 0; i < animals.length(); i++){
@@ -51,7 +54,6 @@ public class Controller {
                 int amount = animalObj.getInt("amount");
                 JSONObject spec = animalObj.getJSONObject("spec");
                 
-                // Add N animals of this type
                 for(int j = 0; j < amount; j++){
                     sim.addAnimal(spec);
                 }
@@ -59,31 +61,47 @@ public class Controller {
         }
     }
     
+    // Método privado obligatorio para el visor
+    private List<ObjInfo> toAnimalsInfo(List<? extends AnimalInfo> animals) {
+        List<ObjInfo> ol = new ArrayList<>(animals.size());
+        for (AnimalInfo a : animals) {
+            ol.add(new ObjInfo(a.getGeneticCode(), (int) a.getPosition().getX(), (int) a.getPosition().getY(), (int)Math.round(a.getAge())+2));
+        }
+        return ol;
+    }
+    
     public void run(double t, double dt, boolean sv, OutputStream out){
-        // Get initial state
+        // Inicializar el visor según el enunciado
+        SimpleObjectViewer view = null;
+        if (sv) {
+            MapInfo m = sim.getMapInfo();
+            view = new SimpleObjectViewer("[ECOSYSTEM]", m.getWidth(), m.getHeight(), m.getCols(), m.getRows());
+            view.update(toAnimalsInfo(sim.getAnimals()), sim.getTime(), dt);
+        }
+
         JSONObject initState = sim.asJSON();
         
-        // Run simulation until time exceeds t
         while(sim.getTime() <= t){
             sim.advance(dt);
             
-            // Show simulation if sv is true
-            if(sv){
-                // TODO: Implement object viewer display
+            // Actualizar visor
+            if(sv) {
+                view.update(toAnimalsInfo(sim.getAnimals()), sim.getTime(), dt);
             }
         }
         
-        // Get final state
         JSONObject finalState = sim.asJSON();
-        
-        // Create output JSON
         JSONObject output = new JSONObject();
         output.put("in", initState);
         output.put("out", finalState);
         
-        // Write to output stream
-        PrintWriter pw = new PrintWriter(out);
-        pw.println(output.toString());
-        pw.flush();
+        // El enunciado recomienda usar PrintStream
+        PrintStream p = new PrintStream(out);
+        p.println(output.toString());
+        
+        // Cerrar visor
+        if (sv) {
+            view.close();
+        }
     }
 }

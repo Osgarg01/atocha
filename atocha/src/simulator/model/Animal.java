@@ -26,47 +26,46 @@ public abstract class Animal implements Entity, AnimalInfo{
 	    protected SelectionStrategy mateStrategy;
 		@Override
 		public State getState() {
-			// TODO Auto-generated method stub
 			return state;
 		}
 		@Override
 		public Vector2D getPosition() {
-			// TODO Auto-generated method stub
+		
 			return pos;
 		}
 		@Override
 		public String getGeneticCode() {
-			// TODO Auto-generated method stub
+		
 			return geneticCode;
 		}
 		@Override
 		public Diet getDiet() {
-			// TODO Auto-generated method stub
+		
 			return diet;
 		}
 		@Override
 		public double getSpeed() {
-			// TODO Auto-generated method stub
+	
 			return speed;
 		}
 		@Override
 		public double getSightRange() {
-			// TODO Auto-generated method stub
+	
 			return sightRange;
 		}
 		@Override
 		public double getEnergy() {
-			// TODO Auto-generated method stub
+		
 			return energy;
 		}
 		@Override
 		public double getAge() {
-			// TODO Auto-generated method stub
+		
 			return age;
 		}
 		@Override
 		public Vector2D getDestination() {
-			// TODO Auto-generated method stub
+	
 			return dest;
 		}
 		@Override
@@ -75,38 +74,6 @@ public abstract class Animal implements Entity, AnimalInfo{
 		}
 		@Override
 		public void update(double dt) {
-			if (dt <= 0) throw new IllegalArgumentException("dt debe ser positivo");
-			if (state == State.DEAD) return;
-			
-			if (regionMngr != null) {
-	            double x = pos.getX();
-	            double y = pos.getY();
-	            double w = regionMngr.getWidth();
-	            double h = regionMngr.getHeight();
-	            boolean outside = x < 0 || x >= w || y < 0 || y >= h;
-	            if (outside) {
-	                while (x >= w) x -= w;
-	                while (x < 0) x += w;
-	                while (y >= h) y -= h;
-	                while (y < 0) y += h;
-	                pos = new Vector2D(x, y);
-	                setState(State.NORMAL);
-	            }
-	        }
-			
-			updateState(dt);
-			
-			if (energy <= 0.0 || age > Constants.MAX_AGE_SHEEP) {
-	            setState(State.DEAD);
-	            return;
-	        }
-
-	        // get food from region
-	        if (state != State.DEAD && regionMngr != null) {
-	            double food = regionMngr.getFood(this, dt);
-	            energy = Utils.constrainValueInRange(energy + food, 0.0, Constants.MAX_ENERGY);
-	        }
-	
 		}
 		
 		protected abstract void updateState(double dt);
@@ -131,7 +98,7 @@ public abstract class Animal implements Entity, AnimalInfo{
 	        this.speed = Utils.getRandomizedParameter(initSpeed, 0.1);
 
 	        this.mateStrategy = mateStrategy;
-	        this.pos = pos; // puede ser null → se coloca luego en init()
+	        this.pos = pos; // puede ser null se coloca luego en init()
 
 	        // Atributos iniciales según enunciado
 	        this.state = State.NORMAL;
@@ -183,25 +150,43 @@ public abstract class Animal implements Entity, AnimalInfo{
 		}
 		
 		public void init(AnimalMapView regMngr) {
-			  this.regionMngr = regMngr;
+			this.regionMngr = regMngr;
 
-		        // Si la posición era null → elegir una posición aleatoria dentro del mapa
-		        if (pos == null) {
-		            double x = Utils.RAND.nextDouble() * (regMngr.getWidth() - 1);
-		            double y = Utils.RAND.nextDouble() * (regMngr.getHeight() - 1);
-		            pos = new Vector2D(x, y);
-		        } else {
-		            // Asegurar que cae dentro de los límites del mapa
-		            double x = Math.max(0, Math.min(pos.getX(), regMngr.getWidth() - 1));
-		            double y = Math.max(0, Math.min(pos.getY(), regMngr.getHeight() - 1));
-		            pos = new Vector2D(x, y);
-		        }
+			// Si la posición era null elegir una posición aleatoria dentro del mapa
+			if (pos == null) {
+				double x = Utils.RAND.nextDouble() * (regMngr.getWidth() - 1);
+				double y = Utils.RAND.nextDouble() * (regMngr.getHeight() - 1);
+				pos = new Vector2D(x, y);
+			} else {
+				adjustPosition();
+			}
 
-		        // Elegir un destino aleatorio dentro del mapa
-		        double dx = Utils.RAND.nextDouble() * (regMngr.getWidth() - 1);
-		        double dy = Utils.RAND.nextDouble() * (regMngr.getHeight() - 1);
-		        dest = new Vector2D(dx, dy);
+			// Elegir un destino aleatorio dentro del mapa
+			double dx = Utils.RAND.nextDouble() * (regMngr.getWidth() - 1);
+			double dy = Utils.RAND.nextDouble() * (regMngr.getHeight() - 1);
+			dest = new Vector2D(dx, dy);
 		    }
+		
+		
+		protected boolean adjustPosition() {
+			if (regionMngr != null) {
+				double w = regionMngr.getWidth();
+				double h = regionMngr.getHeight();
+				
+				double x = pos.getX();
+				double y = pos.getY();
+				boolean changed = false;
+				
+				while (x >= w) { x -= w; changed = true; }
+				while (x < 0) { x += w; changed = true; }
+				while (y >= h) { y -= h; changed = true; }
+				while (y < 0) { y += h; changed = true; }
+				
+				if (changed) pos = new Vector2D(x, y);
+				return changed;
+			}
+			return false;
+		}
 		 
 		 public Animal deliverBaby() {
 		        Animal tmp = baby;
@@ -242,6 +227,8 @@ public abstract class Animal implements Entity, AnimalInfo{
 		    protected abstract void setHungerStateAction();
 		    protected abstract void setDangerStateAction();
 		    protected abstract void setDeadStateAction();
+		    
+		
 		    
 		    @Override
 		    public JSONObject asJSON() {

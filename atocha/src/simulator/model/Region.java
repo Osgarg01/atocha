@@ -7,7 +7,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public abstract class Region implements Entity, FoodSupplier, AnimalInfo {
+public abstract class Region implements Entity, FoodSupplier, RegionInfo {
 
 	protected List<Animal> animals;
 	

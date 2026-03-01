@@ -5,11 +5,12 @@ import org.json.JSONObject;
 
 import simulator.misc.Utils;
 import simulator.misc.Vector2D;
+import simulator.model.Animal;
 import simulator.model.SelectFirst;
 import simulator.model.SelectionStrategy;
 import simulator.model.Wolf;
 
-public class WolfBuilder extends Builder<Wolf>{
+public class WolfBuilder extends Builder<Animal>{
     private Factory<SelectionStrategy> sFactory;
     
     
@@ -43,10 +44,11 @@ public class WolfBuilder extends Builder<Wolf>{
             JSONArray xRange = posObj.getJSONArray("x_range");
             JSONArray yRange = posObj.getJSONArray("y_range");
             
-            double xMin = xRange.getDouble(0);
-            double xMax = xRange.getDouble(1);
-            double yMin = yRange.getDouble(0);
-            double yMax = yRange.getDouble(1);
+
+            double xMin = ((Number) xRange.get(0)).doubleValue();
+            double xMax = ((Number) xRange.get(1)).doubleValue();
+            double yMin =((Number) yRange.get(0)).doubleValue();
+            double yMax =((Number) yRange.get(1)).doubleValue();
             
             // genero numero aleatorio entre xMin y xMax, y entre yMin y yMax
             double x = xMin + Utils.RAND.nextDouble() * (xMax - xMin);
