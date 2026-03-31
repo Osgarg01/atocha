@@ -65,16 +65,16 @@ public class Main {
 	// some attributes to stores values corresponding to command-line parameters
 	//
 	private static Double time = null;
-	private static Double deltaTime = null;
+	public static Double deltaTime = null;
 	private static String inFile = null;
 	private static String outFile = null;
 	private static boolean simpleViewer = false;
 	private static ExecMode mode = ExecMode.BATCH;
 	
 	// Factories
-	private static Factory<Animal> animalsFactory;
-	private static Factory<Region> regionsFactory;
-	private static Factory<SelectionStrategy> strategiesFactory;
+	public static Factory<Animal> animalsFactory;
+	public static Factory<Region> regionsFactory;
+	public static Factory<SelectionStrategy> strategiesFactory;
 
 
 	private static void parseArgs(String[] args) {

@@ -44,7 +44,6 @@ public class UsageExample {
 		else
 			System.out.println("It does not have a key 'bla'!!");
 
-
 		// Accessing the value of a key of a known type, already converted to a specific
 		// type (it simple uses casting!). It throws an exception if the type does not
 		// match -- usually you know what type you expect.
@@ -63,7 +62,7 @@ public class UsageExample {
 		System.out.println("** Access with default value");
 		System.out.println();
 
-		System.out.println("bla = " + jo.optInt("bla",15));
+		System.out.println("bla = " + jo.optInt("bla", 15));
 
 		// Array values are special!
 		//
@@ -183,12 +182,12 @@ public class UsageExample {
 		System.out.println("=======================");
 		System.out.println();
 
-		System.out
-				.println("Are joFromString and joFromFile1 similar? " + checkSemanticEquality(joFromString, joFromFile1));
-		System.out
-				.println("Are joFromString and joFromFile2 similar? " + checkSemanticEquality(joFromString, joFromFile2));
-		System.out
-				.println("Are joFromString and joFromFile3 similar? " + checkSemanticEquality(joFromString, joFromFile3));
+		System.out.println(
+				"Are joFromString and joFromFile1 simrilar? " + checkSemanticEquality(joFromString, joFromFile1));
+		System.out.println(
+				"Are joFromString and joFromFile2 simrilar? " + checkSemanticEquality(joFromString, joFromFile2));
+		System.out.println(
+				"Are joFromString and joFromFile3 simrilar? " + checkSemanticEquality(joFromString, joFromFile3));
 		System.out.println();
 
 		// Example 3: create JSON structure

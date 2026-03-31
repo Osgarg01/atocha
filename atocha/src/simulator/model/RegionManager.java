@@ -2,8 +2,10 @@ package simulator.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 import org.json.JSONArray;
@@ -228,4 +230,43 @@ List<Animal> inRange = new ArrayList<>();
 		return info;
 	}
 
+
+	@Override
+	public Iterator<RegionData> iterator() {
+		return new Iterator<RegionData>() {
+			private int currentRow = 0;
+			private int currentCol = 0;
+
+			@Override
+			public boolean hasNext() {
+				// Quedan elementos si la fila actual es menor que el total de filas
+				return currentRow < rows && currentCol < cols;
+			}
+
+			@Override
+			public RegionData next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException();
+				}
+				
+				// Creamos el RegionData con la región actual
+				MapInfo.RegionData data = new MapInfo.RegionData(currentRow, currentCol, regions[currentRow][currentCol]);
+				
+				// Avanzamos de izquierda a derecha (columnas)
+				currentCol++;
+				
+				// Si llegamos al final de las columnas, pasamos a la siguiente fila
+				if (currentCol >= cols) {
+					currentCol = 0;
+					currentRow++;
+				}
+				
+				return data;
+	}
+		
+	};
 }
+	
+}
+
+

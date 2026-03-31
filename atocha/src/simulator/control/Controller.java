@@ -1,5 +1,5 @@
 package simulator.control;
-
+import simulator.model.EcoSysObserver;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -26,26 +26,8 @@ public class Controller {
     }   
 
     public void loadData(JSONObject data){
-        if(data.has("regions")){
-            JSONArray regions = data.getJSONArray("regions");
-            for(int i = 0; i < regions.length(); i++){
-                JSONObject regionObj = regions.getJSONObject(i);
-                JSONArray rowRange = regionObj.getJSONArray("row");
-                JSONArray colRange = regionObj.getJSONArray("col");
-                JSONObject spec = regionObj.getJSONObject("spec");
-                
-                int rf = rowRange.getInt(0);
-                int rt = rowRange.getInt(1);
-                int cf = colRange.getInt(0);
-                int ct = colRange.getInt(1);
-                
-                for(int R = rf; R <= rt; R++){
-                    for(int C = cf; C <= ct; C++){
-                        sim.setRegion(R, C, spec);
-                    }
-                }
-            }
-        }
+        setRegions(data);
+        
         
         if(data.has("animals")){
             JSONArray animals = data.getJSONArray("animals");
@@ -103,5 +85,45 @@ public class Controller {
         if (sv) {
             view.close();
         }
+    }
+    
+    public void reset(int cols, int rows, int width, int height) {
+        sim.reset(cols, rows, width, height);
+    }
+    
+    public void setRegions(JSONObject rs) {
+        // Se ha movido aquí la lógica que antes estaba en loadData
+        if(rs.has("regions")){
+            JSONArray regions = rs.getJSONArray("regions");
+            for(int i = 0; i < regions.length(); i++){
+                JSONObject regionObj = regions.getJSONObject(i);
+                JSONArray rowRange = regionObj.getJSONArray("row");
+                JSONArray colRange = regionObj.getJSONArray("col");
+                JSONObject spec = regionObj.getJSONObject("spec");
+                
+                int rf = rowRange.getInt(0);
+                int rt = rowRange.getInt(1);
+                int cf = colRange.getInt(0);
+                int ct = colRange.getInt(1);
+                
+                for(int R = rf; R <= rt; R++){
+                    for(int C = cf; C <= ct; C++){
+                        sim.setRegion(R, C, spec);
+                    }
+                }
+            }
+        }
+    }
+    
+    public void advance(double dt) {
+        sim.advance(dt);
+    }
+
+    public void addObserver(EcoSysObserver o) {
+        sim.addObserver(o);
+    }
+
+    public void removeObserver(EcoSysObserver o) {
+        sim.removeObserver(o);
     }
 }

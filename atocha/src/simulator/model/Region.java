@@ -40,4 +40,8 @@ public abstract class Region implements Entity, FoodSupplier, RegionInfo {
 		return info;
 	}
 	
+	public List<AnimalInfo> getAnimalsInfo() {  
+		  return new ArrayList<>(animals); // se puede usar Collections.unmodifiableList(animals);  
+		}
+	
 }

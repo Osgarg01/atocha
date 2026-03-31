@@ -24,4 +24,10 @@ public class DynamicSupplyRegionBuilder extends Builder<Region> {
 
 		return new DynamicSupplyRegion(food, factor);
 	}
+	
+	@Override
+	protected void fillInData(JSONObject data) {
+		data.put("factor", "food increase factor (optional, default 2.0)");
+		data.put("food", "initial amount of food (optional, default 100.0)");
+	}
 }
