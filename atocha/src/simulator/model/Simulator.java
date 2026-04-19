@@ -34,6 +34,7 @@ public class Simulator implements JSONable, Observable<EcoSysObserver> {
 		this.regionsFactory = regionsF;
 		this.time = 0.0;
 		this.animals = new ArrayList<>();
+		this.observers = new ArrayList<>();
 		
 		this.regionManager = new RegionManager(cols,rows,width,length);
 		
@@ -50,6 +51,7 @@ public class Simulator implements JSONable, Observable<EcoSysObserver> {
 		for (EcoSysObserver o : observers) {
 			o.onReset(time, regionManager, animalList);
 		}
+		
 	}
 	
 	private void setRegion(int row, int col, Region r) {

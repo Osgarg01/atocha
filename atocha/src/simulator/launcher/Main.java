@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -33,6 +35,7 @@ import simulator.model.Animal;
 import simulator.model.Region;
 import simulator.model.SelectionStrategy;
 import simulator.model.Simulator;
+import simulator.view.MainWindow;
 
 public class Main {
 	
@@ -69,7 +72,7 @@ public class Main {
 	private static String inFile = null;
 	private static String outFile = null;
 	private static boolean simpleViewer = false;
-	private static ExecMode mode = ExecMode.BATCH;
+	private static ExecMode mode = ExecMode.GUI;
 	
 	// Factories
 	public static Factory<Animal> animalsFactory;
@@ -77,7 +80,7 @@ public class Main {
 	public static Factory<SelectionStrategy> strategiesFactory;
 
 
-	private static void parseArgs(String[] args) {
+	private static void parseArgs(String[] args) throws ParseException {
 
 		// define the valid command line options
 		//
@@ -86,35 +89,29 @@ public class Main {
 		// parse the command line as provided in args
 		//
 		CommandLineParser parser = new DefaultParser();
-		try {
-			CommandLine line = parser.parse(cmdLineOptions, args);
-			parseHelpOption(line, cmdLineOptions);
-			parseInFileOption(line);
-			parseTimeOption(line);
+		CommandLine line = parser.parse(cmdLineOptions, args);
+		parseHelpOption(line, cmdLineOptions);
+		parseModeOption(line);
+		parseInFileOption(line);
+		parseTimeOption(line);
 
 			// if there are some remaining arguments, then something wrong is
 			// provided in the command line!
 			//
 			
-			parseDeltaTimeOption(line);
-			parseOutFileOption(line);
-			parseSimpleViewerOption(line);
+		parseDeltaTimeOption(line);
+		parseOutFileOption(line);
+		parseSimpleViewerOption(line);
 			
 			
 			
-			String[] remaining = line.getArgs();
-			if (remaining.length > 0) {
-				String error = "Illegal arguments:";
-				for (String o : remaining)
-					error += (" " + o);
-				throw new ParseException(error);
-			}
-
-		} catch (ParseException e) {
-			System.err.println(e.getLocalizedMessage());
-			System.exit(1);
+		String[] remaining = line.getArgs();
+		if (remaining.length > 0) {
+			String error = "Illegal arguments:";
+			for (String o : remaining)
+				error += (" " + o);
+			throw new ParseException(error);
 		}
-
 	}
 
 	private static Options buildOptions() {
@@ -123,6 +120,12 @@ public class Main {
 		// help
 		cmdLineOptions.addOption(Option.builder("h").longOpt("help").desc("Print this message.").build());
 
+		//m
+		
+		cmdLineOptions.addOption(Option.builder("m").longOpt("mode").hasArg()
+				.desc("Execution Mode. Possible values: 'batch' (Batch mode), 'gui' (Graphical User Interface mode). Default value: 'gui'.")
+				.build());
+		
 		// input file
 		cmdLineOptions.addOption(Option.builder("i").longOpt("input").hasArg().desc("A configuration file.").build());
 
@@ -153,7 +156,17 @@ public class Main {
 			System.exit(0);
 		}
 	}
-
+	// NUEVO Mï¿½TODO PARA LEER EL MODO
+		private static void parseModeOption(CommandLine line) throws ParseException {
+			String m = line.getOptionValue("m", "gui"); // "gui" por defecto
+			if (m.equalsIgnoreCase("batch")) {
+				mode = ExecMode.BATCH;
+			} else if (m.equalsIgnoreCase("gui")) {
+				mode = ExecMode.GUI;
+			} else {
+				throw new ParseException("Invalid value for mode: " + m);
+			}
+		}
 	private static void parseInFileOption(CommandLine line) throws ParseException {
 		inFile = line.getOptionValue("i");
 		if (mode == ExecMode.BATCH && inFile == null) {
@@ -181,8 +194,11 @@ public class Main {
 		}
 	}
 
-	private static void parseOutFileOption(CommandLine line) {
+	private static void parseOutFileOption(CommandLine line) throws ParseException {
 		outFile = line.getOptionValue("o");
+		if (mode == ExecMode.BATCH && outFile == null) {
+			throw new ParseException("In batch mode an output file is required");
+		}
 	}
 
 	private static void parseSimpleViewerOption(CommandLine line) {
@@ -197,13 +213,13 @@ public class Main {
 		strategyBuilders.add(new SelectYoungestBuilder());
 		strategiesFactory = new BuilderBasedFactory<>(strategyBuilders);
 
-		// Inicializar la factoría de animales
+		// Inicializar la factorï¿½a de animales
 		List<Builder<Animal>> animalBuilders = new ArrayList<>();
 		animalBuilders.add(new SheepBuilder(strategiesFactory));
 		animalBuilders.add(new WolfBuilder(strategiesFactory));
 		animalsFactory = new BuilderBasedFactory<>(animalBuilders);
 
-		// Inicializar la factoría de regiones
+		// Inicializar la factorï¿½a de regiones
 		List<Builder<Region>> regionBuilders = new ArrayList<>();
 		regionBuilders.add(new DefaultRegionBuilder());
 		regionBuilders.add(new DynamicSupplyRegionBuilder());
@@ -218,7 +234,7 @@ public class Main {
 	private static void startBatchMode() throws Exception {
 InputStream is = new FileInputStream(new File(inFile));
 		
-		// Cargar el JSON usando el método ya existente
+		// Cargar el JSON usando el mï¿½todo ya existente
 		JSONObject jsonInput = loadJSONFile(is);
 		is.close(); // Cerramos el stream de entrada
 		
@@ -245,10 +261,34 @@ InputStream is = new FileInputStream(new File(inFile));
 		}
 	}
 
-	private static void startGUIMode() throws Exception {
-		throw new UnsupportedOperationException("GUI mode is not ready yet ...");
-	}
+	// NUEVO Mï¿½TODO PARA ARRANCAR LA GUI
+		private static void startGUIMode() throws Exception {
+			Simulator sim;
+			Controller ctrl;
 
+			if (inFile != null) {
+				// Si el usuario pasa un fichero, lo cargamos
+				InputStream is = new FileInputStream(new File(inFile));
+				JSONObject jsonInput = loadJSONFile(is);
+				is.close();
+				
+				int width = jsonInput.getInt("width");
+				int height = jsonInput.getInt("height");
+				int rows = jsonInput.getInt("rows");
+				int cols = jsonInput.getInt("cols");
+				
+				sim = new Simulator(cols, rows, width, height, animalsFactory, regionsFactory);
+				ctrl = new Controller(sim);
+				ctrl.loadData(jsonInput);
+			} else {
+				// Si no pasa fichero, usamos valores por defecto (20 cols, 15 rows, 800 width, 600 height)
+				sim = new Simulator(20, 15, 800, 600, animalsFactory, regionsFactory);
+				ctrl = new Controller(sim);
+			}
+
+			// Arrancar la ventana grï¿½fica principal de forma segura
+			SwingUtilities.invokeAndWait(() -> new MainWindow(ctrl));
+		}
 	private static void start(String[] args) throws Exception {
 		initFactories();
 		parseArgs(args);
@@ -267,9 +307,11 @@ InputStream is = new FileInputStream(new File(inFile));
 		try {
 			start(args);
 		} catch (Exception e) {
-			System.err.println("Something went wrong ...");
-			System.err.println();
-			e.printStackTrace();
+			if (mode == ExecMode.GUI) {
+				javax.swing.JOptionPane.showMessageDialog(null, e.getMessage(), "ERROR",
+						javax.swing.JOptionPane.ERROR_MESSAGE);
+			}
+			System.exit(1);
 		}
 	}
 }
